@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nigeria State & LGA — SQL Data Explorer</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #1a1a1a;
+            --border: #2a2a2a;
+            --accent: #00ff88;
+            --accent2: #ff6b35;
+            --accent3: #4d9fff;
+            --text: #e8e8e8;
+            --text-dim: #666;
+            --text-muted: #444;
+            --mono: 'Space Mono', monospace;
+            --display: 'Bebas Neue', sans-serif;
+            --body: 'DM Sans', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--body);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── NOISE OVERLAY ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.4;
+        }
+
+        /* ─── LAYOUT GRID ─── */
+        .shell {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: auto 1fr;
+            min-height: 100vh;
+        }
+
+        /* ─── LEFT RAIL ─── */
+        .rail {
+            grid-row: 1 / -1;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .rail-brand {
+            padding: 32px 24px 24px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rail-brand::before {
+            content: 'NG';
+            font-family: var(--display);
+            font-size: 120px;
+            color: var(--border);
+            position: absolute;
+            right: -10px;
+            top: -20px;
+            line-height: 1;
+            letter-spacing: -4px;
+            pointer-events: none;
+        }
+
+        .rail-brand .tag {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--accent);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .rail-brand h1 {
+            font-family: var(--display);
+            font-size: 28px;
+            letter-spacing: 2px;
+            line-height: 1.1;
+            color: var(--text);
+            position: relative;
+            z-index: 1;
+        }
+
+        .rail-brand p {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            font-family: var(--mono);
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── STATS ─── */
+        .rail-stats {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 2px;
+        }
+
+        .stat-box .num {
+            font-family: var(--display);
+            font-size: 32px;
+            color: var(--accent);
+            line-height: 1;
+            display: block;
+        }
+
+        .stat-box .lbl {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* ─── NAV SEARCH ─── */
+        .rail-search {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-wrap::before {
+            content: '>';
+            font-family: var(--mono);
+            color: var(--accent);
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        #stateSearch {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 8px 8px 28px;
+            font-family: var(--mono);
+            font-size: 11px;
+            outline: none;
+            border-radius: 2px;
+            transition: border-color 0.2s;
+        }
+
+        #stateSearch:focus {
+            border-color: var(--accent);
+        }
+
+        #stateSearch::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ─── STATE LIST ─── */
+        .state-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .state-list::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .state-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .state-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        .state-item {
+            padding: 8px 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.15s;
+            border-left: 2px solid transparent;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .state-item:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .state-item.active {
+            background: var(--surface2);
+            border-left-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .state-item .state-id {
+            color: var(--text-muted);
+            font-size: 9px;
+            min-width: 20px;
+        }
+
+        .state-item .lga-count {
+            margin-left: auto;
+            font-size: 9px;
+            color: var(--text-muted);
+            background: var(--border);
+            padding: 1px 5px;
+            border-radius: 10px;
+        }
+
+        /* ─── MAIN AREA ─── */
+        .main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── TOP BAR ─── */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            flex: 1;
+        }
+
+        .topbar-title span {
+            color: var(--accent);
+        }
+
+        /* ─── EXPORT BUTTONS ─── */
+        .export-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-export {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 6px 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-export::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.2s;
+            z-index: 0;
+        }
+
+        .btn-export:hover::before {
+            transform: scaleX(1);
+        }
+
+        .btn-export:hover {
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        .btn-export span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-export.csv:hover::before {
+            background: var(--accent2);
+        }
+
+        .btn-export.csv:hover {
+            border-color: var(--accent2);
+        }
+
+        .btn-export.json:hover::before {
+            background: var(--accent3);
+        }
+
+        .btn-export.json:hover {
+            border-color: var(--accent3);
+        }
+
+        .btn-export.txt:hover::before {
+            background: #c084fc;
+        }
+
+        .btn-export.txt:hover {
+            border-color: #c084fc;
+        }
+
+        /* scope selector */
+        .scope-toggle {
+            display: flex;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .scope-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: 2px;
+            padding: 6px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .scope-btn.active {
+            background: var(--surface2);
+            color: var(--accent);
+        }
+
+        /* ─── CONTENT AREA ─── */
+        .content {
+            flex: 1;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        /* ─── TABLE PANE ─── */
+        .pane {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+
+        .pane:last-child {
+            border-right: none;
+        }
+
+        .pane-header {
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+        }
+
+        .pane-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        .pane-header .dot.orange {
+            background: var(--accent2);
+            animation-delay: 0.5s;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .pane-header h2 {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        .pane-header .row-count {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .table-wrap::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;
+        }
+
+        .table-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+
+        thead th {
+            background: var(--surface2);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 9px;
+            padding: 10px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #161616;
+            transition: background 0.1s;
+            cursor: pointer;
+        }
+
+        tbody tr:hover {
+            background: var(--surface2);
+        }
+
+        tbody tr.highlight {
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 2px solid var(--accent);
+        }
+
+        tbody td {
+            padding: 8px 20px;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        tbody td:first-child {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        tbody td.name-cell {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        /* ─── RIGHT PANEL (SQL VIEWER) ─── */
+        .sql-pane {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sql-pane .pane-header {
+            background: var(--surface);
+        }
+
+        .sql-block {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .sql-block::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .sql-block::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        .sql-code {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .sql-kw {
+            color: #ff79c6;
+        }
+
+        .sql-tbl {
+            color: var(--accent3);
+        }
+
+        .sql-val {
+            color: var(--accent);
+        }
+
+        .sql-num {
+            color: var(--accent2);
+        }
+
+        .sql-cmt {
+            color: var(--text-muted);
+        }
+
+        /* ─── LOADING / EMPTY STATE ─── */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .empty-state .icon {
+            font-family: var(--display);
+            font-size: 80px;
+            color: var(--border);
+            line-height: 1;
+        }
+
+        .empty-state p {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            max-width: 200px;
+            line-height: 1.6;
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 12px 20px;
+            z-index: 10000;
+            border-radius: 2px;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 300px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ─── TICKER ─── */
+        .ticker {
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+            padding: 6px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            grid-column: 2;
+        }
+
+        .ticker-inner {
+            display: inline-block;
+            animation: ticker 40s linear infinite;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        @keyframes ticker {
+            from {
+                transform: translateX(100vw);
+            }
+
+            to {
+                transform: translateX(-100%);
+            }
+        }
+
+        .ticker-inner span {
+            color: var(--accent);
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 900px) {
+            .shell {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+            }
+
+            .rail {
+                position: relative;
+                height: auto;
+                max-height: 300px;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .ticker {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="shell">
+
+        <!-- ─── LEFT RAIL ─── -->
+        <aside class="rail">
+            <div class="rail-brand">
+                <span class="tag">// Data Explorer</span>
+                <h1>NIGERIA<br>GEO DATA</h1>
+                <p>36 States + FCT<br>SQL · JSON · CSV · XLSX · TXT</p>
+            </div>
+
+            <div class="rail-stats">
+                <div class="stat-box">
+                    <span class="num" id="stateCount">37</span>
+                    <span class="lbl">States</span>
+                </div>
+                <div class="stat-box">
+                    <span class="num" id="lgaCount">—</span>
+                    <span class="lbl">LGAs</span>
+                </div>
+            </div>
+
+            <div class="rail-search">
+                <div class="search-wrap">
+                    <input type="text" id="stateSearch" placeholder="filter states..." autocomplete="off">
+                </div>
+            </div>
+
+            <div class="state-list" id="stateList">
+                <!-- populated by JS -->
+            </div>
+        </aside>
+
+        <!-- ─── TICKER ─── -->
+        <div class="ticker">
+            <span class="ticker-inner">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                NIGERIA STATE &amp; LGA DATABASE &nbsp;·&nbsp;
+                <span>36 STATES</span> + FCT &nbsp;·&nbsp;
+                STRUCTURED SQL FORMAT &nbsp;·&nbsp;
+                EXPORT TO <span>EXCEL · CSV · JSON · TXT</span> &nbsp;·&nbsp;
+                MAINTAINED BY <span>SOLUTIONEXE</span> &nbsp;·&nbsp;
+                GITHUB.COM/SOLUTIONEXE &nbsp;·&nbsp;
+                FREE TO USE &nbsp;·&nbsp;
+                MIT LICENSE &nbsp;·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                NIGERIA STATE &amp; LGA DATABASE &nbsp;·&nbsp;
+                <span>36 STATES</span> + FCT &nbsp;·&nbsp;
+                STRUCTURED SQL FORMAT &nbsp;·&nbsp;
+                EXPORT TO <span>EXCEL · CSV · JSON · TXT</span> &nbsp;·&nbsp;
+                MAINTAINED BY <span>SOLUTIONEXE</span> &nbsp;·&nbsp;
+                GITHUB.COM/SOLUTIONEXE &nbsp;·&nbsp;
+                FREE TO USE &nbsp;·&nbsp;
+                MIT LICENSE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+        </div>
+
+        <!-- ─── MAIN AREA ─── -->
+        <main class="main">
+
+            <!-- TOP BAR -->
+            <div class="topbar">
+                <div class="topbar-title">
+                    <span id="currentContext">SELECT A STATE TO EXPLORE</span>
+                    &nbsp;·&nbsp; nigeria-state-lga.sql
+                </div>
+
+                <div class="scope-toggle">
+                    <button class="scope-btn active" onclick="setScope('selected')" id="scopeSelected">SELECTED</button>
+                    <button class="scope-btn" onclick="setScope('all')" id="scopeAll">ALL DATA</button>
+                </div>
+
+                <div class="export-group">
+                    <button class="btn-export" onclick="exportData('xlsx')"><span>↓ XLSX</span></button>
+                    <button class="btn-export csv" onclick="exportData('csv')"><span>↓ CSV</span></button>
+                    <button class="btn-export json" onclick="exportData('json')"><span>↓ JSON</span></button>
+                    <button class="btn-export txt" onclick="exportData('txt')"><span>↓ TXT</span></button>
+                </div>
+            </div>
+
+            <!-- CONTENT PANES -->
+            <div class="content">
+
+                <!-- STATES TABLE -->
+                <div class="pane">
+                    <div class="pane-header">
+                        <div class="dot"></div>
+                        <h2>states</h2>
+                        <span class="row-count" id="statesRowCount">0 rows</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>NAME</th>
+                                    <th>LGAs</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statesTableBody">
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="empty-state">
+                                            <div class="icon">DB</div>
+                                            <p>Loading state data...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- LGAS TABLE -->
+                <div class="pane sql-pane">
+                    <div class="pane-header">
+                        <div class="dot orange"></div>
+                        <h2>lgas</h2>
+                        <span class="row-count" id="lgasRowCount">0 rows</span>
+                    </div>
+                    <div class="table-wrap" id="lgaTableWrap">
+                        <div class="empty-state">
+                            <div class="icon">LGA</div>
+                            <p>Click a state to view its local government areas</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ─── DATA ───────────────────────────────────────────────────────────────────
+
+        const STATES = [
+            {id: 1, name: "Abia"},
+            {id: 2, name: "Adamawa"},
+            {id: 3, name: "Akwa Ibom"},
+            {id: 4, name: "Anambra"},
+            {id: 5, name: "Bauchi"},
+            {id: 6, name: "Bayelsa"},
+            {id: 7, name: "Benue"},
+            {id: 8, name: "Borno"},
+            {id: 9, name: "Cross River"},
+            {id: 10, name: "Delta"},
+            {id: 11, name: "Ebonyi"},
+            {id: 12, name: "Edo"},
+            {id: 13, name: "Ekiti"},
+            {id: 14, name: "Enugu"},
+            {id: 15, name: "FCT - Abuja"},
+            {id: 16, name: "Gombe"},
+            {id: 17, name: "Imo"},
+            {id: 18, name: "Jigawa"},
+            {id: 19, name: "Kaduna"},
+            {id: 20, name: "Kano"},
+            {id: 21, name: "Katsina"},
+            {id: 22, name: "Kebbi"},
+            {id: 23, name: "Kogi"},
+            {id: 24, name: "Kwara"},
+            {id: 25, name: "Lagos"},
+            {id: 26, name: "Nasarawa"},
+            {id: 27, name: "Niger"},
+            {id: 28, name: "Ogun"},
+            {id: 29, name: "Ondo"},
+            {id: 30, name: "Osun"},
+            {id: 31, name: "Oyo"},
+            {id: 32, name: "Plateau"},
+            {id: 33, name: "Rivers"},
+            {id: 34, name: "Sokoto"},
+            {id: 35, name: "Taraba"},
+            {id: 36, name: "Yobe"},
+            {id: 37, name: "Zamfara"}
+        ];
+
+        const LGAS = {
+            1: ["Aba North", "Aba South", "Arochukwu", "Bende", "Ikwuano", "Isiala Ngwa North", "Isiala Ngwa South", "Isuikwuato", "Obi Nwa", "Ohafia", "Osisioma", "Ugwunagbo", "Ukwa East", "Ukwa West", "Umuahia North", "Umuahia South", "Umu Nneochi"],
+            2: ["Demsa", "Fufure", "Ganye", "Gayuk", "Gombi", "Grie", "Hong", "Jada", "Lamurde", "Madagali", "Maiha", "Mayo Belwa", "Michika", "Mubi North", "Mubi South", "Numan", "Shelleng", "Song", "Toungo", "Yola North", "Yola South"],
+            3: ["Abak", "Eastern Obolo", "Eket", "Esit Eket", "Essien Udim", "Etim Ekpo", "Etinan", "Ibeno", "Ibesikpo Asutan", "Ibiono-Ibom", "Ika", "Ikono", "Ikot Abasi", "Ikot Ekpene", "Ini", "Itu", "Mbo", "Mkpat-Enin", "Nsit-Atai", "Nsit-Ibom", "Nsit-Ubium", "Obot Akara", "Okobo", "Onna", "Oron", "Oruk Anam", "Udung-Uko", "Ukanafun", "Uruan", "Urue-Offong/Oruko", "Uyo"],
+            4: ["Aguata", "Anambra East", "Anambra West", "Anaocha", "Awka North", "Awka South", "Ayamelum", "Dunukofia", "Ekwusigo", "Idemili North", "Idemili South", "Ihiala", "Njikoka", "Nnewi North", "Nnewi South", "Ogbaru", "Onitsha North", "Onitsha South", "Orumba North", "Orumba South", "Oyi"],
+            5: ["Alkaleri", "Bauchi", "Bogoro", "Damban", "Darazo", "Dass", "Gamawa", "Ganjuwa", "Giade", "Itas/Gadau", "Jama'are", "Katagum", "Kirfi", "Misau", "Ningi", "Shira", "Tafawa Balewa", "Toro", "Warji", "Zaki"],
+            6: ["Brass", "Ekeremor", "Kolokuma/Opokuma", "Nembe", "Ogbia", "Sagbama", "Southern Ijaw", "Yenagoa"],
+            7: ["Ado", "Agatu", "Apa", "Buruku", "Gboko", "Guma", "Gwer East", "Gwer West", "Katsina-Ala", "Konshisha", "Kwande", "Logo", "Makurdi", "Obi", "Ogbadibo", "Ohimini", "Oju", "Okpokwu", "Otukpo", "Tarka", "Ukum", "Ushongo", "Vandeikya"],
+            8: ["Abadam", "Askira/Uba", "Bama", "Bayo", "Biu", "Chibok", "Damboa", "Dikwa", "Gubio", "Guzamala", "Gwoza", "Hawul", "Jere", "Kaga", "Kala/Balge", "Konduga", "Kukawa", "Kwaya Kusar", "Mafa", "Magumeri", "Maiduguri", "Marte", "Mobbar", "Monguno", "Ngala", "Nganzai", "Shani"],
+            9: ["Abi", "Akamkpa", "Akpabuyo", "Bakassi", "Bekwarra", "Biase", "Boki", "Calabar Municipal", "Calabar South", "Etung", "Ikom", "Obanliku", "Obubra", "Obudu", "Odukpani", "Ogoja", "Yakuur", "Yala"],
+            10: ["Aniocha North", "Aniocha South", "Bomadi", "Burutu", "Ethiope East", "Ethiope West", "Ika North East", "Ika South", "Isoko North", "Isoko South", "Ndokwa East", "Ndokwa West", "Okpe", "Oshimili North", "Oshimili South", "Patani", "Sapele", "Udu", "Ughelli North", "Ughelli South", "Ukwuani", "Uvwie", "Warri North", "Warri South", "Warri South West"],
+            11: ["Abakaliki", "Afikpo North", "Afikpo South", "Ebonyi", "Ezza North", "Ezza South", "Ikwo", "Ishielu", "Ivo", "Izzi", "Ohaozara", "Ohaukwu", "Onicha"],
+            12: ["Akoko-Edo", "Egor", "Esan Central", "Esan North-East", "Esan South-East", "Esan West", "Etsako Central", "Etsako East", "Etsako West", "Igueben", "Ikpoba-Okha", "Orhionmwon", "Owan East", "Owan West", "Uhunmwonde"],
+            13: ["Ado Ekiti", "Efon", "Ekiti East", "Ekiti South-West", "Ekiti West", "Emure", "Gbonyin", "Ido Osi", "Ijero", "Ikere", "Ikole", "Ilejemeje", "Irepodun/Ifelodun", "Ise/Orun", "Moba", "Oye"],
+            14: ["Aninri", "Awgu", "Enugu East", "Enugu North", "Enugu South", "Ezeagu", "Igbo Etiti", "Igbo Eze North", "Igbo Eze South", "Isi Uzo", "Nkanu East", "Nkanu West", "Nsukka", "Oji River", "Udenu", "Udi", "Uzo Uwani"],
+            15: ["Abaji", "Bwari", "Gwagwalada", "Kuje", "Kwali", "Municipal Area Council"],
+            16: ["Akko", "Balanga", "Billiri", "Dukku", "Funakaye", "Gombe", "Kaltungo", "Kwami", "Nafada", "Shongom", "Yamaltu/Deba"],
+            17: ["Aboh Mbaise", "Ahiazu Mbaise", "Ehime Mbano", "Ezinihitte", "Ideato North", "Ideato South", "Ihitte/Uboma", "Ikeduru", "Isiala Mbano", "Isu", "Mbaitoli", "Ngor Okpala", "Njaba", "Nkwerre", "Nwangele", "Obowo", "Oguta", "Ohaji/Egbema", "Okigwe", "Orlu", "Orsu", "Oru East", "Oru West", "Owerri Municipal", "Owerri North", "Owerri West", "Unuimo"],
+            18: ["Auyo", "Babura", "Biriniwa", "Birnin Kudu", "Buji", "Dutse", "Gagarawa", "Garki", "Gumel", "Guri", "Gwaram", "Gwiwa", "Hadejia", "Jahun", "Kafin Hausa", "Kaugama", "Kazaure", "Kiri Kasama", "Kiyawa", "Maigatari", "Malam Madori", "Miga", "Ringim", "Roni", "Sule Tankarkar", "Taura", "Yankwashi"],
+            19: ["Birnin Gwari", "Chikun", "Giwa", "Igabi", "Ikara", "Jaba", "Jema'a", "Kachia", "Kaduna North", "Kaduna South", "Kagarko", "Kajuru", "Kaura", "Kauru", "Kubau", "Kudan", "Lere", "Makarfi", "Sabon Gari", "Sanga", "Soba", "Zangon Kataf", "Zaria"],
+            20: ["Ajingi", "Albasu", "Bagwai", "Bebeji", "Bichi", "Bunkure", "Dala", "Dambatta", "Dawakin Kudu", "Dawakin Tofa", "Doguwa", "Fagge", "Gabasawa", "Garko", "Garun Mallam", "Gaya", "Gezawa", "Gwale", "Gwarzo", "Kabo", "Kano Municipal", "Karaye", "Kibiya", "Kiru", "Kumbotso", "Kunchi", "Kura", "Madobi", "Makoda", "Minjibir", "Nasarawa", "Rano", "Rimin Gado", "Rogo", "Shanono", "Sumaila", "Takai", "Tarauni", "Tofa", "Tsanyawa", "Tudun Wada", "Ungogo", "Warawa", "Wudil"],
+            21: ["Bakori", "Batagarawa", "Batsari", "Baure", "Bindawa", "Charanchi", "Dan Musa", "Dandume", "Danja", "Daura", "Dutsi", "Dutsin-Ma", "Faskari", "Funtua", "Ingawa", "Jibia", "Kafur", "Kaita", "Kankara", "Kankia", "Katsina", "Kurfi", "Kusada", "Mai'adua", "Malumfashi", "Mani", "Mashi", "Matazu", "Musawa", "Rimi", "Sabuwa", "Safana", "Sandamu", "Zango"],
+            22: ["Aleiro", "Arewa Dandi", "Argungu", "Augie", "Bagudo", "Birnin Kebbi", "Bunza", "Dandi", "Fakai", "Gwandu", "Jega", "Kalgo", "Koko/Besse", "Maiyama", "Ngaski", "Sakaba", "Shanga", "Suru", "Wasagu/Danko", "Yauri", "Zuru"],
+            23: ["Adavi", "Ajaokuta", "Ankpa", "Bassa", "Dekina", "Ibaji", "Idah", "Igalamela-Odolu", "Ijumu", "Kabba/Bunu", "Kogi", "Lokoja", "Mopa-Muro", "Ofu", "Ogori/Magongo", "Okehi", "Okene", "Olamaboro", "Omala", "Yagba East", "Yagba West"],
+            24: ["Asa", "Baruten", "Edu", "Ekiti", "Ifelodun", "Ilorin East", "Ilorin South", "Ilorin West", "Irepodun", "Isin", "Kaiama", "Moro", "Offa", "Oke Ero", "Oyun", "Pategi"],
+            25: ["Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Apapa", "Badagry", "Epe", "Eti-Osa", "Ibeju-Lekki", "Ifako-Ijaiye", "Ikeja", "Ikorodu", "Kosofe", "Lagos Island", "Lagos Mainland", "Mushin", "Ojo", "Oshodi-Isolo", "Shomolu", "Surulere"],
+            26: ["Akwanga", "Awe", "Doma", "Karu", "Keana", "Keffi", "Kokona", "Lafia", "Nasarawa", "Nasarawa Egon", "Obi", "Toto", "Wamba"],
+            27: ["Agaie", "Agwara", "Bida", "Borgu", "Bosso", "Chanchaga", "Edati", "Gbako", "Gurara", "Katcha", "Kontagora", "Lapai", "Lavun", "Magama", "Mariga", "Mashegu", "Mokwa", "Moya", "Paikoro", "Rafi", "Rijau", "Shiroro", "Suleja", "Tafa", "Wushishi"],
+            28: ["Abeokuta North", "Abeokuta South", "Ado-Odo/Ota", "Egbado North", "Egbado South", "Ewekoro", "Ifo", "Ijebu East", "Ijebu North", "Ijebu North East", "Ijebu Ode", "Ikenne", "Imeko Afon", "Ipokia", "Obafemi Owode", "Odeda", "Odogbolu", "Ogun Waterside", "Remo North", "Shagamu"],
+            29: ["Akoko North-East", "Akoko North-West", "Akoko South-East", "Akoko South-West", "Akure North", "Akure South", "Ese Odo", "Idanre", "Ifedore", "Ilaje", "Ile Oluji/Okeigbo", "Irele", "Odigbo", "Okitipupa", "Ondo East", "Ondo West", "Ose", "Owo"],
+            30: ["Aiyedaade", "Aiyedire", "Atakunmosa East", "Atakunmosa West", "Boluwaduro", "Boripe", "Ede North", "Ede South", "Egbedore", "Ejigbo", "Ifedayo", "Ifelodun", "Ila", "Ilesa East", "Ilesa West", "Irepodun", "Irewole", "Isokan", "Iwo", "Obokun", "Odo Otin", "Ola Oluwa", "Olorunda", "Oriade", "Orolu", "Osogbo"],
+            31: ["Afijio", "Akinyele", "Atiba", "Atisbo", "Egbeda", "Ibadan North", "Ibadan North-East", "Ibadan North-West", "Ibadan South-East", "Ibadan South-West", "Ibarapa Central", "Ibarapa East", "Ibarapa North", "Ido", "Irepo", "Iseyin", "Itesiwaju", "Iwajowa", "Kajola", "Lagelu", "Ogbomosho North", "Ogbomosho South", "Ogo Oluwa", "Olorunsogo", "Oluyole", "Ona Ara", "Orelope", "Ori Ire", "Oyo East", "Oyo West", "Saki East", "Saki West", "Surulere"],
+            32: ["Barkin Ladi", "Bassa", "Bokkos", "Jos East", "Jos North", "Jos South", "Kanam", "Kanke", "Langtang North", "Langtang South", "Mangu", "Mikang", "Pankshin", "Qua'an Pan", "Riyom", "Shendam", "Wase"],
+            33: ["Abua/Odual", "Ahoada East", "Ahoada West", "Akuku-Toru", "Andoni", "Asari-Toru", "Bonny", "Degema", "Eleme", "Emohua", "Etche", "Gokana", "Ikwerre", "Khana", "Obio/Akpor", "Ogba/Egbema/Ndoni", "Ogu/Bolo", "Okrika", "Omuma", "Opobo/Nkoro", "Oyigbo", "Port Harcourt", "Tai"],
+            34: ["Binji", "Bodinga", "Dange Shuni", "Gada", "Goronyo", "Gudu", "Gwadabawa", "Illela", "Isa", "Kebbe", "Kware", "Rabah", "Sabon Birni", "Shagari", "Silame", "Sokoto North", "Sokoto South", "Tambuwal", "Tangaza", "Tureta", "Wamako", "Wurno", "Yabo"],
+            35: ["Ardo Kola", "Bali", "Donga", "Gashaka", "Gassol", "Ibi", "Jalingo", "Karim Lamido", "Kumi", "Lau", "Sardauna", "Takum", "Ussa", "Wukari", "Yorro", "Zing"],
+            36: ["Bade", "Bursari", "Damaturu", "Fika", "Fune", "Geidam", "Gujba", "Gulani", "Jakusko", "Karasuwa", "Machina", "Nangere", "Nguru", "Potiskum", "Tarmuwa", "Yunusari", "Yusufari"],
+            37: ["Anka", "Bakura", "Birnin Magaji/Kiyaw", "Bukkuyum", "Bungudu", "Gummi", "Gusau", "Kaura Namoda", "Maradun", "Maru", "Shinkafi", "Talata Mafara", "Tsafe", "Zurmi"]
+        };
+
+        // ─── STATE ─────────────────────────────────────────────────────────────────
+
+        let selectedStateId = null;
+        let exportScope = 'selected';
+        let filteredStates = [...STATES];
+
+        // ─── INIT ──────────────────────────────────────────────────────────────────
+
+        function init() {
+            // Count all LGAs
+            const totalLgas = Object.values(LGAS).reduce((a, b) => a + b.length, 0);
+            document.getElementById('lgaCount').textContent = totalLgas;
+            document.getElementById('stateCount').textContent = STATES.length;
+
+            renderStateList(STATES);
+            renderStatesTable(STATES);
+
+            document.getElementById('stateSearch').addEventListener('input', e => {
+                const q = e.target.value.toLowerCase();
+                filteredStates = STATES.filter(s => s.name.toLowerCase().includes(q));
+                renderStateList(filteredStates);
+                renderStatesTable(filteredStates);
+            });
+        }
+
+        // ─── RENDER STATE RAIL ─────────────────────────────────────────────────────
+
+        function renderStateList(states) {
+            const list = document.getElementById('stateList');
+            list.innerHTML = states.map(s => `
+    <div class="state-item ${s.id === selectedStateId ? 'active' : ''}" onclick="selectState(${s.id})">
+      <span class="state-id">${String(s.id).padStart(2, '0')}</span>
+      <span>${s.name}</span>
+      <span class="lga-count">${LGAS[s.id]?.length || 0}</span>
+    </div>
+  `).join('');
+        }
+
+        // ─── RENDER STATES TABLE ───────────────────────────────────────────────────
+
+        function renderStatesTable(states) {
+            const tbody = document.getElementById('statesTableBody');
+            document.getElementById('statesRowCount').textContent = `${states.length} rows`;
+            tbody.innerHTML = states.map(s => `
+    <tr class="${s.id === selectedStateId ? 'highlight' : ''}" onclick="selectState(${s.id})">
+      <td>${s.id}</td>
+      <td class="name-cell">${s.name}</td>
+      <td>${LGAS[s.id]?.length || 0}</td>
+    </tr>
+  `).join('');
+        }
+
+        // ─── SELECT STATE ──────────────────────────────────────────────────────────
+
+        function selectState(id) {
+            selectedStateId = id;
+            const state = STATES.find(s => s.id === id);
+            const lgas = LGAS[id] || [];
+
+            document.getElementById('currentContext').textContent =
+                `states.id = ${id} → ${state.name.toUpperCase()}`;
+
+            renderStateList(filteredStates);
+            renderStatesTable(filteredStates);
+
+            // LGA table
+            const wrap = document.getElementById('lgaTableWrap');
+            document.getElementById('lgasRowCount').textContent = `${lgas.length} rows`;
+
+            wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>STATE_ID</th>
+          <th>NAME</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${lgas.map((name, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${id}</td>
+            <td class="name-cell">${name}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+        }
+
+        // ─── SCOPE ─────────────────────────────────────────────────────────────────
+
+        function setScope(scope) {
+            exportScope = scope;
+            document.getElementById('scopeSelected').classList.toggle('active', scope === 'selected');
+            document.getElementById('scopeAll').classList.toggle('active', scope === 'all');
+        }
+
+        // ─── EXPORT ────────────────────────────────────────────────────────────────
+
+        function getExportData() {
+            if (exportScope === 'all') {
+                return STATES.map(s => ({
+                    state_id: s.id,
+                    state_name: s.name,
+                    lgas: (LGAS[s.id] || []).map((name, i) => ({lga_id: i + 1, name}))
+                }));
+            } else {
+                if (!selectedStateId) {toast('⚠ Select a state first, or switch to ALL DATA'); return null;}
+                const state = STATES.find(s => s.id === selectedStateId);
+                return [{
+                    state_id: state.id,
+                    state_name: state.name,
+                    lgas: (LGAS[selectedStateId] || []).map((name, i) => ({lga_id: i + 1, name}))
+                }];
+            }
+        }
+
+        function exportData(format) {
+            const data = getExportData();
+            if (!data) return;
+
+            const flat = [];
+            data.forEach(s => s.lgas.forEach(l => flat.push({
+                state_id: s.state_id,
+                state_name: s.state_name,
+                lga_id: l.lga_id,
+                lga_name: l.name
+            })));
+
+            const label = exportScope === 'all' ? 'nigeria-all' : `state-${selectedStateId}`;
+
+            switch (format) {
+                case 'csv': exportCSV(flat, label); break;
+                case 'json': exportJSON(data, label); break;
+                case 'xlsx': exportXLSX(flat, label); break;
+                case 'txt': exportTXT(flat, label); break;
+            }
+        }
+
+        function exportCSV(flat, label) {
+            const header = 'state_id,state_name,lga_id,lga_name\n';
+            const rows = flat.map(r => `${r.state_id},"${r.state_name}",${r.lga_id},"${r.lga_name}"`).join('\n');
+            download(`${label}.csv`, header + rows, 'text/csv');
+            toast('✓ CSV exported');
+        }
+
+        function exportJSON(data, label) {
+            download(`${label}.json`, JSON.stringify(data, null, 2), 'application/json');
+            toast('✓ JSON exported');
+        }
+
+        function exportTXT(flat, label) {
+            let out = 'NIGERIA STATE & LGA DATA\n' + '='.repeat(40) + '\n\n';
+            let current = null;
+            flat.forEach(r => {
+                if (r.state_id !== current) {
+                    out += `\n[${r.state_id}] ${r.state_name.toUpperCase()}\n${'─'.repeat(30)}\n`;
+                    current = r.state_id;
+                }
+                out += `  ${r.lga_id}. ${r.lga_name}\n`;
+            });
+            download(`${label}.txt`, out, 'text/plain');
+            toast('✓ TXT exported');
+        }
+
+        function exportXLSX(flat, label) {
+            // Build XLSX manually (simple format)
+            const ws_data = [['State ID', 'State Name', 'LGA ID', 'LGA Name']];
+            flat.forEach(r => ws_data.push([r.state_id, r.state_name, r.lga_id, r.lga_name]));
+
+            // Use SheetJS CDN
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            script.onload = () => {
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                ws['!cols'] = [{wch: 10}, {wch: 20}, {wch: 10}, {wch: 25}];
+                XLSX.utils.book_append_sheet(wb, ws, 'Nigeria LGA Data');
+                XLSX.writeFile(wb, `${label}.xlsx`);
+                toast('✓ Excel file exported');
+            };
+            script.onerror = () => {
+                // Fallback CSV if SheetJS fails
+                exportCSV(flat, label);
+                toast('✓ Exported as CSV (offline mode)');
+            };
+            document.head.appendChild(script);
+        }
+
+        function download(filename, content, type) {
+            const blob = new Blob([content], {type});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        // ─── TOAST ─────────────────────────────────────────────────────────────────
+
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2800);
+        }
+
+        // ─── GO ────────────────────────────────────────────────────────────────────
+        init();
+    </script>
+</body>
+
+</html>
