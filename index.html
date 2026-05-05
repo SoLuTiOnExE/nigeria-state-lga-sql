@@ -13,6 +13,7 @@
             --bg: #0a0a0a;
             --surface: #111111;
             --surface2: #1a1a1a;
+            --surface3: #666;
             --border: #2a2a2a;
             --accent: #00ff88;
             --accent2: #ff6b35;
@@ -691,6 +692,30 @@
                 grid-column: 1;
             }
         }
+
+        /* ─── GITHUB FLOAT BUTTON ─── */
+        .github-float {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            font-family: var(--mono);
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            cursor: pointer;
+            z-index: 10000;
+            transition: all 0.25s ease;
+        }
+
+        .github-float:hover {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
@@ -828,7 +853,9 @@
 
     <!-- TOAST -->
     <div class="toast" id="toast"></div>
-
+    <a class="github-float" href="https://github.com/solutionexe/nigeria-state-lga-sql" target="_blank">
+        GITHUB ↗
+    </a>
     <script>
         // ─── DATA ───────────────────────────────────────────────────────────────────
 
