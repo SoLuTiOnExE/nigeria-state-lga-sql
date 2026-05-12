@@ -9,6 +9,8 @@ A clean, structured, and complete dataset of all **36 Nigerian States + FCT (Abu
 ```
 ├── files/
 │   ├── states.sql       # All 37 states (36 + FCT) INSERT statements
+│   ├── LgaSeeder.php       # All 37 states (36 + FCT) Seeder file
+│   ├── StateSeeder.php       # All 37 states (36 + FCT) Seeder file
 │   └── lgas.sql         # All LGAs with state_id foreign keys
 ├── index.html           # Interactive browser-based explorer & exporter
 ├── README.md
@@ -50,7 +52,10 @@ mysql -u root -p your_database < files/lgas.sql
 ```
 
 ### Option 2 — Interactive Explorer (No install needed)
-Open `index.html` in any modern browser. You can:
+Open `index.html` in any modern browser. 
+Or
+**click the link to view ** — [Click live link]([https://github.com/SoLuTiOnExE](https://solutionexe.github.io/nigeria-state-lga-sql/))
+You can:
 - **Browse** all states and their LGAs
 - **Filter** states by name
 - **Export** selected state or all data as:
