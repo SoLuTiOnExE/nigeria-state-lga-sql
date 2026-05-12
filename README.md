@@ -9,8 +9,8 @@ A clean, structured, and complete dataset of all **36 Nigerian States + FCT (Abu
 ```
 ├── files/
 │   ├── states.sql       # All 37 states (36 + FCT) INSERT statements
-│   ├── LgaSeeder.php       # All 37 states (36 + FCT) Seeder file
-│   ├── StateSeeder.php       # All 37 states (36 + FCT) Seeder file
+│   ├── LgaSeeder.php    # All 37 states (36 + FCT) Seeder file
+│   ├── StateSeeder.php  # All 37 states (36 + FCT) Seeder file
 │   └── lgas.sql         # All LGAs with state_id foreign keys
 ├── index.html           # Interactive browser-based explorer & exporter
 ├── README.md
