@@ -52,13 +52,17 @@ mysql -u root -p your_database < files/lgas.sql
 ```
 
 ### Option 2 — Interactive Explorer (No install needed)
-Open `index.html` in any modern browser. 
-Or
-**click the link to view ** — [Click live link]([https://github.com/SoLuTiOnExE](https://solutionexe.github.io/nigeria-state-lga-sql/))
+
+Open `index.html` in any modern browser.
+
+Or click below to view:
+
+**Live Explorer:** [View Interactive Explorer](https://solutionexe.github.io/nigeria-state-lga-sql/)
+
 You can:
-- **Browse** all states and their LGAs
-- **Filter** states by name
-- **Export** selected state or all data as:
+- Browse all states and their LGAs
+- Filter states by name
+- Export selected state or all data as:
   - `.xlsx` (Excel)
   - `.csv`
   - `.json`
