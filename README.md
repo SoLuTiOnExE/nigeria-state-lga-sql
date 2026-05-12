@@ -9,9 +9,9 @@ A clean, structured, and complete dataset of all **36 Nigerian States + FCT (Abu
 ```
 ├── files/
 │   ├── states.sql       # All 37 states (36 + FCT) INSERT statements
-│   ├── LgaSeeder.php    # All 37 states (36 + FCT) Seeder file
-│   ├── StateSeeder.php  # All 37 states (36 + FCT) Seeder file
-│   └── lgas.sql         # All LGAs with state_id foreign keys
+│   ├── lgas.sql         # All LGAs with state_id foreign keys
+│   ├── StateSeeder.php  # Laravel seeder for states
+│   └── LgaSeeder.php    # Laravel seeder for LGAs
 ├── index.html           # Interactive browser-based explorer & exporter
 ├── README.md
 └── LICENSE
@@ -46,6 +46,7 @@ CREATE TABLE `lgas` (
 ## 🚀 Usage
 
 ### Option 1 — Direct SQL Import
+
 ```bash
 mysql -u root -p your_database < files/states.sql
 mysql -u root -p your_database < files/lgas.sql
@@ -53,11 +54,9 @@ mysql -u root -p your_database < files/lgas.sql
 
 ### Option 2 — Interactive Explorer (No install needed)
 
-Open `index.html` in any modern browser.
+Open `index.html` in any modern browser, or visit the live version:
 
-Or click below to view:
-
-**Live Explorer:** [View Interactive Explorer](https://solutionexe.github.io/nigeria-state-lga-sql/)
+**🌐 Live Explorer:** [View Interactive Explorer](https://solutionexe.github.io/nigeria-state-lga-sql/)
 
 You can:
 - Browse all states and their LGAs
@@ -68,12 +67,48 @@ You can:
   - `.json`
   - `.txt`
 
-### Option 3 — Laravel / PHP (Example)
-```php
-// Seed your database
-DB::unprepared(file_get_contents(database_path('states.sql')));
-DB::unprepared(file_get_contents(database_path('lgas.sql')));
+### Option 3 — Laravel Seeder Classes (Recommended)
+
+Copy the seeder files to your Laravel project:
+
 ```
+database/
+└── seeders/
+    ├── StateSeeder.php
+    └── LgaSeeder.php
+```
+
+Register them in `database/seeders/DatabaseSeeder.php`:
+
+```php
+public function run(): void
+{
+    $this->call([
+        StateSeeder::class,
+        LgaSeeder::class,
+    ]);
+}
+```
+
+Then run:
+
+```bash
+php artisan db:seed
+```
+
+**Alternative:** Direct SQL import in Laravel:
+
+```php
+DB::unprepared(file_get_contents(database_path('files/states.sql')));
+DB::unprepared(file_get_contents(database_path('files/lgas.sql')));
+```
+
+---
+
+### 📌 Best Practice Note
+
+- **Direct SQL** (`.sql` files) → Fast, raw database insert
+- **Seeder Classes** → Laravel-friendly, recommended for maintainability and version control
 
 ---
 
@@ -106,7 +141,7 @@ DB::unprepared(file_get_contents(database_path('lgas.sql')));
 
 ## 🤝 Contributing
 
-Found an LGA spelling issue or missing entry? PRs are welcome.
+Found an LGA spelling issue or missing entry? PRs are welcome!
 
 1. Fork the repo
 2. Create your branch: `git checkout -b fix/lga-name`
