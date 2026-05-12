@@ -1,7 +1,8 @@
 <!-- HEADER BANNER -->
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=200&section=header&text=Nigeria%20State%20%26%20LGA%20Dataset&fontSize=35&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=SQL%20·%20JSON%20·%20CSV%20·%20XLSX%20·%20TXT&descAlignY=55&descSize=18" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:203a43,100:2c5364&height=220&section=header&text=Fasanya%20Ayomide%20(Solution)&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=35" />
 </p>
+
 
 <!-- TYPING EFFECT -->
 <p align="center">
